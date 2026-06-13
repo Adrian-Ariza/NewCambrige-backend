@@ -124,7 +124,7 @@ def sincronizar_docentes(
 ):
     return service.sincronizar_docentes(ejecucion_id=request.ejecucion_id)
 
-@router.delete("/scraping/cancelar/{ejecucion_id}", summary="Cancela la sincronización y purga staging")
+@router.delete("/scraping/cancelar/{ejecucion_id}", summary="Cancela la importación y limpia los datos temporales")
 def cancelar_scraping(
     ejecucion_id: int,
     tipo: str,
