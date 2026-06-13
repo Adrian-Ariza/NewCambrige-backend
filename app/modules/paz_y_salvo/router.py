@@ -117,7 +117,7 @@ def obtener_firma_modulo(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_roles(["admin", "rectoria"])),
 ):
-    resultado = service._get_firma_por_modulo(nombre_modulo, db)
+    resultado = service.obtener_firma_modulo(nombre_modulo, db, current_user.id_usuario)
     if "error" in resultado:
         raise HTTPException(404, resultado["error"])
     return FileResponse(resultado["ruta"], media_type="image/png")
@@ -192,7 +192,7 @@ def descargar_pdf_docente_endpoint(
 ):
     periodo_id_valido = _validar_acceso_periodo(periodo_id, current_user, db)
     try:
-        pdf_bytes = service.descargar_pdf_docente(db, docente_id, periodo_id_valido)
+        pdf_bytes = service.descargar_pdf_docente(db, docente_id, periodo_id_valido, current_user.id_usuario)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     nombre_archivo = f"paz_y_salvo_docente_{docente_id}.pdf"
@@ -201,16 +201,6 @@ def descargar_pdf_docente_endpoint(
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={nombre_archivo}"},
     )
-
-@router.get("/imagen-firma/{nombre_modulo}")
-def obtener_imagen_firma(
-    nombre_modulo: str,
-    current_user: Usuario = Depends(require_roles(["admin", "rectoria"])),
-):
-    resultado = service.obtener_firma(nombre_modulo)
-    if "error" in resultado:
-        raise HTTPException(404, resultado["error"])
-    return FileResponse(resultado["ruta"], media_type="image/png")
 
 @router.get("/descargar-pdf/estudiantes/batch")
 def descargar_pdf_estudiantes_batch_endpoint(
