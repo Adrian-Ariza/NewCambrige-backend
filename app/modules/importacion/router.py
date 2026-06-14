@@ -12,7 +12,7 @@ from app.modules.importacion.schemas import (
     CredencialesUpdate
 )
 from app.modules.importacion.service import ImportacionService
-from app.modules.auth.deps import require_roles
+from app.modules.auth.deps import get_current_user
 from app.modules.usuarios.models import Usuario
 from app.modules.secretaria.models import CredencialesLogin
 from app.core.security import encriptar_texto
@@ -25,7 +25,7 @@ def get_importacion_service(db: Session = Depends(get_db)):
 @router.get("/credenciales", response_model=CredencialesResponse, summary="Obtiene las credenciales del robot scraper")
 def obtener_credenciales(
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_roles(["admin"]))
+    current_user: Usuario = Depends(get_current_user)
 ):
     credencial = db.query(CredencialesLogin).first()
     if not credencial:
@@ -36,7 +36,7 @@ def obtener_credenciales(
 def actualizar_credenciales(
     datos: CredencialesUpdate,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_roles(["admin"]))
+    current_user: Usuario = Depends(get_current_user)
 ):
     credencial = db.query(CredencialesLogin).first()
     if not credencial:
@@ -53,21 +53,21 @@ def actualizar_credenciales(
 @router.post("/scraping", summary="Inicia el scraping desde WebColegios")
 def iniciar_scraping(
     service: ImportacionService = Depends(get_importacion_service),
-    current_user: Usuario = Depends(require_roles(["admin"]))
+    current_user: Usuario = Depends(get_current_user)
 ):
     return service.iniciar_scraping(usuario_id=current_user.id_usuario)
 
 @router.post("/scraping/estudiantes", summary="Inicia el scraping solo de estudiantes")
 def iniciar_scraping_estudiantes(
     service: ImportacionService = Depends(get_importacion_service),
-    current_user: Usuario = Depends(require_roles(["admin"]))
+    current_user: Usuario = Depends(get_current_user)
 ):
     return service.iniciar_scraping_estudiantes(usuario_id=current_user.id_usuario)
 
 @router.post("/scraping/docentes", summary="Inicia el scraping solo de docentes")
 def iniciar_scraping_docentes(
     service: ImportacionService = Depends(get_importacion_service),
-    current_user: Usuario = Depends(require_roles(["admin"]))
+    current_user: Usuario = Depends(get_current_user)
 ):
     return service.iniciar_scraping_docentes(usuario_id=current_user.id_usuario)
 
@@ -75,7 +75,7 @@ def iniciar_scraping_docentes(
 def carga_masiva(
     request: CargaMasivaRequest, 
     service: ImportacionService = Depends(get_importacion_service),
-    current_user: Usuario = Depends(require_roles(["admin"]))
+    current_user: Usuario = Depends(get_current_user)
 ):
     return service.ejecutar_carga_masiva(request, usuario_id=current_user.id_usuario)
 
@@ -83,7 +83,7 @@ def carga_masiva(
 def carga_individual(
     request: CargaIndividualRequest, 
     service: ImportacionService = Depends(get_importacion_service),
-    current_user: Usuario = Depends(require_roles(["admin"]))
+    current_user: Usuario = Depends(get_current_user)
 ):
     return service.ejecutar_carga_individual(request, usuario_id=current_user.id_usuario)
 
@@ -92,7 +92,7 @@ def listar_ejecuciones(
     limit: int = 100, 
     skip: int = 0, 
     service: ImportacionService = Depends(get_importacion_service),
-    current_user: Usuario = Depends(require_roles(["admin"]))
+    current_user: Usuario = Depends(get_current_user)
 ):
     return service.obtener_ejecuciones(limit=limit, skip=skip)
 
@@ -100,7 +100,7 @@ def listar_ejecuciones(
 def obtener_ejecucion(
     id: int, 
     service: ImportacionService = Depends(get_importacion_service),
-    current_user: Usuario = Depends(require_roles(["admin"]))
+    current_user: Usuario = Depends(get_current_user)
 ):
     ej = service.obtener_ejecucion(id)
     if not ej:
@@ -112,7 +112,7 @@ def obtener_ejecucion(
 def sincronizar_estudiantes(
     request: SincronizarRequest, 
     service: ImportacionService = Depends(get_importacion_service),
-    current_user: Usuario = Depends(require_roles(["admin"]))
+    current_user: Usuario = Depends(get_current_user)
 ):
     return service.sincronizar_estudiantes(ejecucion_id=request.ejecucion_id)
 
@@ -120,7 +120,7 @@ def sincronizar_estudiantes(
 def sincronizar_docentes(
     request: SincronizarRequest, 
     service: ImportacionService = Depends(get_importacion_service),
-    current_user: Usuario = Depends(require_roles(["admin"]))
+    current_user: Usuario = Depends(get_current_user)
 ):
     return service.sincronizar_docentes(ejecucion_id=request.ejecucion_id)
 
@@ -129,7 +129,7 @@ def cancelar_scraping(
     ejecucion_id: int,
     tipo: str,
     service: ImportacionService = Depends(get_importacion_service),
-    current_user: Usuario = Depends(require_roles(["admin"]))
+    current_user: Usuario = Depends(get_current_user)
 ):
     if tipo not in ["estudiante", "docente"]:
         raise HTTPException(status_code=400, detail="El tipo debe ser 'estudiante' o 'docente'")
