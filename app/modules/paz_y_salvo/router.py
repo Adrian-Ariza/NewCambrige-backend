@@ -114,10 +114,11 @@ def obtener_sello(
 @router.get("/firma/modulo/{nombre_modulo}")
 def obtener_firma_modulo(
     nombre_modulo: str,
+    usuario_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_roles(["admin", "rectoria"])),
 ):
-    resultado = service.obtener_firma_modulo(nombre_modulo, db, current_user.id_usuario)
+    resultado = service.obtener_firma_modulo(nombre_modulo, db, usuario_id)
     if "error" in resultado:
         raise HTTPException(404, resultado["error"])
     return FileResponse(resultado["ruta"], media_type="image/png")

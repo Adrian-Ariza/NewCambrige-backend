@@ -99,14 +99,12 @@ def _hash_sello() -> str:
 
 def obtener_firma_modulo(nombre_modulo: str, db: Session, usuario_id: Optional[int] = None) -> dict:
     tipo = db.query(TipoFirma).filter(TipoFirma.nombre == nombre_modulo).first()
-    if tipo:
-        query = db.query(ResponsableFirma).filter(
+    if tipo and usuario_id:
+        resp = db.query(ResponsableFirma).filter(
             ResponsableFirma.id_tipo_firma == tipo.id_tipo_firma,
+            ResponsableFirma.id_usuario == usuario_id,
             ResponsableFirma.ruta_firma.isnot(None)
-        )
-        if usuario_id:
-            query = query.filter(ResponsableFirma.id_usuario == usuario_id)
-        resp = query.first()
+        ).first()
         if resp and os.path.exists(resp.ruta_firma) and _verify_firma_integrity(resp.ruta_firma):
             return {"ruta": resp.ruta_firma}
     ruta = FIRMA_PATH_MAP.get(nombre_modulo)
@@ -567,7 +565,12 @@ def listar_docentes_para_rectoria(db: Session, periodo_id: int, nombre: Optional
         Auditoria.id_registro.in_(ids),
         Auditoria.accion == accion,
     ).all()
-    firmados = {a.id_registro: a.fecha for a in auditorias}
+    firmados = {a.id_registro: a for a in auditorias}
+    nombres_firmantes = list(set(a.usuario for a in auditorias))
+    usuarios_por_nombre = {}
+    if nombres_firmantes:
+        for u in db.query(Usuario).filter(Usuario.nombre.in_(nombres_firmantes)).all():
+            usuarios_por_nombre[u.nombre] = u.id_usuario
 
     salones = db.query(Salon).filter(
         Salon.id_usuario.in_(ids),
@@ -587,6 +590,10 @@ def listar_docentes_para_rectoria(db: Session, periodo_id: int, nombre: Optional
         else:
             grado = None
             grupo = None
+        id_usuario_firmante = None
+        if d.id_usuario in firmados:
+            audit_entry = firmados[d.id_usuario]
+            id_usuario_firmante = usuarios_por_nombre.get(audit_entry.usuario)
         resultado.append({
             "id_docente": d.id_usuario,
             "nombre": d.nombre,
@@ -595,7 +602,8 @@ def listar_docentes_para_rectoria(db: Session, periodo_id: int, nombre: Optional
             "grupo": grupo,
             "salon": ", ".join(salones_docente),
             "firmado": d.id_usuario in firmados,
-            "fecha_firma": firmados.get(d.id_usuario),
+            "fecha_firma": firmados[d.id_usuario].fecha if d.id_usuario in firmados else None,
+            "id_usuario_firmante": id_usuario_firmante,
         })
     return resultado
 
