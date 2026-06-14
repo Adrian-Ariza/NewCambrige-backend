@@ -5,11 +5,11 @@ from datetime import date, datetime
 
 from app.shared.models import Auditoria
 from app.modules.banda.models import (
-    Categoria, Ubicacion, InventarioInstrumento, PrestamoInstrumento
+    Categoria, InventarioInstrumento, PrestamoInstrumento
 )
 from app.modules.estudiantes.models import Estudiante
 
-# ============ AUDITORÍA (HELPER) ============
+# ============ AUDITORÍA ============
 def registrar_auditoria_central(db: Session, current_user, tabla: str, id_reg: int, accion_msg: str):
     """
     Registra en la tabla 'auditoria' central del proyecto.
@@ -62,39 +62,6 @@ def delete_categoria(db: Session, categoria_id: int) -> bool:
     db.commit()
     return True
 
-# ============ UBICACIONES ============
-def get_ubicaciones_all(db: Session, skip: int = 0, limit: int = 100) -> List[Ubicacion]:
-    return db.query(Ubicacion).offset(skip).limit(limit).all()
-
-def get_ubicacion_by_id(db: Session, ubicacion_id: int) -> Optional[Ubicacion]:
-    return db.query(Ubicacion).filter(Ubicacion.id_ubicacion == ubicacion_id).first()
-
-def create_ubicacion(db: Session, data: dict) -> Ubicacion:
-    nueva = Ubicacion(**data)
-    db.add(nueva)
-    db.commit()
-    db.refresh(nueva)
-    return nueva
-
-def update_ubicacion(db: Session, ubicacion_id: int, data: dict) -> Optional[Ubicacion]:
-    ubicacion = get_ubicacion_by_id(db, ubicacion_id)
-    if not ubicacion:
-        return None
-    for key, value in data.items():
-        if value is not None:
-            setattr(ubicacion, key, value)
-    db.commit()
-    db.refresh(ubicacion)
-    return ubicacion
-
-def delete_ubicacion(db: Session, ubicacion_id: int) -> bool:
-    ubicacion = get_ubicacion_by_id(db, ubicacion_id)
-    if not ubicacion:
-        return False
-    db.delete(ubicacion)
-    db.commit()
-    return True
-
 # ============ INSTRUMENTOS ============
 def get_instrumentos_all(
     db: Session, 
@@ -105,7 +72,6 @@ def get_instrumentos_all(
 ) -> List[InventarioInstrumento]:
     query = db.query(InventarioInstrumento).options(
         joinedload(InventarioInstrumento.categoria),
-        joinedload(InventarioInstrumento.ubicacion)
     )
     
     if solo_disponibles:
@@ -119,7 +85,6 @@ def get_instrumentos_all(
 def get_instrumento_by_id(db: Session, instrumento_id: int) -> Optional[InventarioInstrumento]:
     return db.query(InventarioInstrumento).options(
         joinedload(InventarioInstrumento.categoria),
-        joinedload(InventarioInstrumento.ubicacion)
     ).filter(InventarioInstrumento.id_instrumento == instrumento_id).first() 
 
 def create_instrumento(db: Session, data: dict, current_user) -> InventarioInstrumento:

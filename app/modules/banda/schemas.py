@@ -18,27 +18,10 @@ class CategoriaResponse(CategoriaBase):
     class Config:
         from_attributes = True
 
-# ============ UBICACIONES ============
-class UbicacionBase(BaseModel):
-    nombre: str
-
-class UbicacionCreate(UbicacionBase):
-    pass
-
-class UbicacionUpdate(BaseModel):
-    nombre: Optional[str] = None
-
-class UbicacionResponse(UbicacionBase):
-    id_ubicacion: int
-    
-    class Config:
-        from_attributes = True
-
 # ============ INSTRUMENTOS ============
 class InstrumentoBase(BaseModel):
     nombre: str
     id_categoria: Optional[int] = None
-    id_ubicacion: Optional[int] = None
     cantidad_total:int = Field(ge=0)
     estado:str = "activo"
     
@@ -48,7 +31,6 @@ class InstrumentoCreate(InstrumentoBase):
 class InstrumentoUpdate(BaseModel):
     nombre: Optional[str] = None
     id_categoria: Optional[int] = None
-    id_ubicacion: Optional[int] = None
     cantidad_total: Optional[int] = Field(None, ge=0)
     estado: Optional[str] = None
 
@@ -56,14 +38,13 @@ class InstrumentoResponse(InstrumentoBase):
     id_instrumento: int
     cantidad_disponible: int
     categoria_nombre: Optional[str] = None
-    ubicacion_nombre: Optional[str] = None
     
     class Config:
         from_attributes = True
 
 # ============ DEVOLUCIONES DE INSTRUMENTOS ============
 class DevolucionCreate(BaseModel):
-    estado_al_devolver: str # "Bueno" o "Malo"
+    estado_al_devolver: str 
     observaciones: Optional[str] = None
 
 # ============ PRÉSTAMOS DE INSTRUMENTOS ============
@@ -108,7 +89,6 @@ class InstrumentoDisponibleResponse(BaseModel):
     nombre: str
     cantidad_disponible: int
     categoria: Optional[str] = None
-    ubicacion: Optional[str] = None
 
 class PrestamoActivoResponse(BaseModel):
     id_prestamo: int
