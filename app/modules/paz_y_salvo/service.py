@@ -686,7 +686,7 @@ def descargar_pdf_docente(db: Session, docente_id: int, periodo_id: int, usuario
             firma_map["rectoria"] = r["ruta"]
     return generar_pdf_paz_salvo(data, "docente", sello_path=SELLO_PATH, firma_map=firma_map)
 
-def descargar_pdf_estudiantes_batch(db: Session, periodo_id: int, grado: str, grupo: str) -> bytes:
+def descargar_pdf_estudiantes_batch(db: Session, periodo_id: int, grado: Optional[str] = None, grupo: Optional[str] = None) -> bytes:
     import io, zipfile
 
     estudiantes = listar_estudiantes_para_rectoria(db, periodo_id, grado=grado, grupo=grupo)
@@ -703,4 +703,23 @@ def descargar_pdf_estudiantes_batch(db: Session, periodo_id: int, grado: str, gr
             except ValueError:
                 continue
 
+    return buf.getvalue()
+
+def descargar_pdf_docentes_batch(db: Session, periodo_id: int, grado: Optional[str] = None, grupo: Optional[str] = None) -> bytes:
+    import io, zipfile
+    docentes = listar_docentes_para_rectoria(db, periodo_id)
+    if grado:
+        docentes = [d for d in docentes if d.get("grado") == grado]
+    if grupo:
+        docentes = [d for d in docentes if d.get("grupo") == grupo]
+    docentes = [d for d in docentes if d.get("firmado")]
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for doc in docentes:
+            try:
+                pdf_bytes = descargar_pdf_docente(db, doc["id_docente"], periodo_id)
+                filename = f"paz_y_salvo_{doc['documento'] or doc['id_docente']}.pdf"
+                zf.writestr(filename, pdf_bytes)
+            except ValueError:
+                continue
     return buf.getvalue()

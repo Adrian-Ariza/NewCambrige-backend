@@ -206,8 +206,8 @@ def descargar_pdf_docente_endpoint(
 @router.get("/descargar-pdf/estudiantes/batch")
 def descargar_pdf_estudiantes_batch_endpoint(
     periodo_id: int = Query(...),
-    grado: str = Query(...),
-    grupo: str = Query(...),
+    grado: Optional[str] = Query(...),
+    grupo: Optional[str] = Query(...),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_roles(["admin", "rectoria"])),
 ):
@@ -215,9 +215,30 @@ def descargar_pdf_estudiantes_batch_endpoint(
     zip_bytes = service.descargar_pdf_estudiantes_batch(
         db, periodo_id_valido, grado, grupo
     )
-    nombre = f"paz_y_salvo_grado_{grado}_grupo_{grupo}.zip"
+    sufijo = []
+    if grado:
+        sufijo.append(f"grado_{grado}")
+    if grupo:
+        sufijo.append(f"grupo_{grupo}")
+    nombre = f"paz_y_salvo_{'_'.join(sufijo) if sufijo else 'todos'}.zip"
     return StreamingResponse(
         iter([zip_bytes]),
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename={nombre}"},
+    )
+
+@router.get("/descargar-pdf/docentes/batch")
+def descargar_pdf_docentes_batch_endpoint(
+    periodo_id: int = Query(...),
+    grado: Optional[str] = Query(None),
+    grupo: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_roles(["admin", "rectoria"])),
+):
+    periodo_id_valido = _validar_acceso_periodo(periodo_id, current_user, db)
+    zip_bytes = service.descargar_pdf_docentes_batch(db, periodo_id_valido, grado, grupo)
+    return StreamingResponse(
+        iter([zip_bytes]),
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=paz_y_salvo_docentes.zip"},
     )
