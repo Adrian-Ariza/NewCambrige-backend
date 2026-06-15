@@ -59,6 +59,7 @@ def listar_instrumentos(
     for i in instrumentos:
         resultado.append({
             "id_instrumento": i.id_instrumento,
+            "codigo":i.id_instrumento,
             "nombre": i.nombre,
             "id_categoria": i.id_categoria,
             "cantidad_total": i.cantidad_total,
@@ -89,7 +90,7 @@ def obtener_instrumento(instrumento_id: int, db: Session = Depends(get_db), curr
         raise HTTPException(status_code=404, detail="Instrumento no encontrado")
     return {
         "id_instrumento": instrumento.id_instrumento,
-        "codigo": instrumento.id_instrumento, # MAPEADO
+        "codigo": instrumento.id_instrumento, 
         "nombre": instrumento.nombre,
         "id_categoria": instrumento.id_categoria,
         "cantidad_total": instrumento.cantidad_total,

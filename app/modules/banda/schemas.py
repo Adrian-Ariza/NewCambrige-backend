@@ -102,13 +102,43 @@ class AuditoriaBandaResponse(BaseModel):
     fecha: date
     hora: datetime
     nombre_usuario: str
-    modulo_origen: str
-    tipo_accion: str
+    tabla: str
+    accion: str
     entidad_afectada: str
     valor_anterior: Optional[str] = None
     valor_nuevo: Optional[str] = None
     resultado: str
     descripcion: str
 
+    class Config:
+        from_attributes = True
+        
+#============ esquemas para grado y grupo ============
+
+class SalonSimple(BaseModel):
+    grado: str
+    grupo: str
+    class Config:
+        from_attributes = True
+
+class EstudianteBase(BaseModel):
+    nombre: str
+    telefono_acudiente: Optional[str] = None
+    id_salon: Optional[int] = None
+    documento: Optional[str] = None
+
+class EstudianteCreate(EstudianteBase):
+    pass
+
+class EstudianteUpdate(BaseModel):
+    nombre: Optional[str] = None
+    telefono_acudiente: Optional[str] = None
+    id_salon: Optional[int] = None
+
+class EstudianteResponse(EstudianteBase):
+    id_estudiante: int
+    created_at: Optional[datetime] = None
+    salon: Optional[SalonSimple] = None
+    
     class Config:
         from_attributes = True
