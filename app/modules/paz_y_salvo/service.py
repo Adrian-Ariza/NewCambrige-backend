@@ -337,19 +337,19 @@ def _auto_banda(db: Session, estudiante_id: int) -> Optional[bool]:
 def _auto_uniforme(db: Session, estudiante_id: int) -> bool:
     pendiente = db.query(PrestamoObjeto).filter(
         PrestamoObjeto.id_estudiante == estudiante_id,
-        PrestamoObjeto.estado_entrega == "prestado"
+        PrestamoObjeto.estado_prestamo == "prestado"
     ).first()
     return pendiente is None
 
 def _auto_salon(db: Session, estudiante_id: int) -> bool:
-    if db.query(Prueba).filter(
+    if not db.query(Prueba).filter(
         Prueba.id_estudiante == estudiante_id,
-        Prueba.estado == "Pendiente"
+        Prueba.estado == "visto"
     ).first():
         return False
-    if db.query(Pupitre).filter(
+    if not db.query(Pupitre).filter(
         Pupitre.id_estudiante == estudiante_id,
-        Pupitre.estado == "Pendiente"
+        Pupitre.estado == "visto"
     ).first():
         return False
     if db.query(PrestamoLibro).filter(
@@ -434,7 +434,7 @@ def listar_estudiantes_para_rectoria(db: Session, periodo_id: int, grado: Option
 
     prestamos_uniforme = set(r.id_estudiante for r in db.query(PrestamoObjeto).filter(
         PrestamoObjeto.id_estudiante.in_(ids),
-        PrestamoObjeto.estado_entrega == "prestado"
+        PrestamoObjeto.estado_prestamo == "prestado"
     ).all())
 
     matriculas = db.query(Matricula).filter(
@@ -457,10 +457,10 @@ def listar_estudiantes_para_rectoria(db: Session, periodo_id: int, grado: Option
                 pendientes_tesoreria.add(est_id)
 
     ids_pruebas = set(r.id_estudiante for r in db.query(Prueba).filter(
-        Prueba.id_estudiante.in_(ids), Prueba.estado == "Pendiente"
+        Prueba.id_estudiante.in_(ids), Prueba.estado == "visto"
     ).all())
     ids_pupitres = set(r.id_estudiante for r in db.query(Pupitre).filter(
-        Pupitre.id_estudiante.in_(ids), Pupitre.estado == "Pendiente"
+        Pupitre.id_estudiante.in_(ids), Pupitre.estado == "visto"
     ).all())
     ids_libros = set(r.id_estudiante for r in db.query(PrestamoLibro).filter(
         PrestamoLibro.id_estudiante.in_(ids), PrestamoLibro.estado == "Prestado"
@@ -502,7 +502,7 @@ def listar_estudiantes_para_rectoria(db: Session, periodo_id: int, grado: Option
                         return False
                 return True
             if campo == "salon":
-                return e.id_estudiante not in ids_pruebas and e.id_estudiante not in ids_pupitres and e.id_estudiante not in ids_libros
+                return e.id_estudiante in ids_pruebas and e.id_estudiante in ids_pupitres and e.id_estudiante not in ids_libros
             if campo == "secretaria":
                 if e.id_estudiante not in ids_matriculados:
                     return False
@@ -640,6 +640,8 @@ def descargar_pdf_estudiante(db: Session, estudiante_id: int, periodo_id: int) -
     estado = get_estado_completo(db, estudiante_id, periodo_id)
     if not estado:
         raise ValueError("Estudiante no encontrado")
+    if not estado.get("todas_firmadas"):
+        raise ValueError("El estudiante no ha completado el paz y salvo")
     estudiante = db.query(Estudiante).filter(Estudiante.id_estudiante == estudiante_id).first()
     salon = db.query(Salon).filter(Salon.id_salon == estudiante.id_salon).first() if estudiante.id_salon else None
     estado["grado"] = str(salon.grado) if salon else ""
@@ -657,13 +659,14 @@ def descargar_pdf_docente(db: Session, docente_id: int, periodo_id: int, usuario
     docente = db.query(Usuario).filter(Usuario.id_usuario == docente_id).first()
     if not docente:
         raise ValueError("Docente no encontrado")
-
     accion = f"FIRMAR_PERIODO_{periodo_id}"
     auditoria = db.query(Auditoria).filter(
         Auditoria.tabla == "firma_docente_rectoria",
         Auditoria.id_registro == docente_id,
         Auditoria.accion == accion,
     ).first()
+    if not auditoria:
+        raise ValueError("El docente no ha completado el paz y salvo")
 
     periodo = db.query(PeriodoAcademico).filter(
         PeriodoAcademico.id_periodo == periodo_id

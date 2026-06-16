@@ -205,9 +205,9 @@ def descargar_pdf_docente_endpoint(
 
 @router.get("/descargar-pdf/estudiantes/batch")
 def descargar_pdf_estudiantes_batch_endpoint(
-    periodo_id: int = Query(...),
-    grado: Optional[str] = Query(...),
-    grupo: Optional[str] = Query(...),
+    periodo_id: int = Query(None),
+    grado: Optional[str] = Query(None),
+    grupo: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_roles(["admin", "rectoria"])),
 ):
@@ -229,7 +229,7 @@ def descargar_pdf_estudiantes_batch_endpoint(
 
 @router.get("/descargar-pdf/docentes/batch")
 def descargar_pdf_docentes_batch_endpoint(
-    periodo_id: int = Query(...),
+    periodo_id: Optional[int] = Query(None),
     grado: Optional[str] = Query(None),
     grupo: Optional[str] = Query(None),
     db: Session = Depends(get_db),
